@@ -18,6 +18,7 @@ export const supabase = createClient<Database>(
     storage: brokeredPreviewStorage(),
     persistSession: true,
     autoRefreshToken: true,
+    detectSessionInUrl: true,
   }
   },
 );

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
+import { toast } from "sonner";
 import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
 
 interface AuthCtx {
@@ -25,12 +26,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
       setUser(s?.user ?? null);
-    });
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
       setLoading(false);
     });
+    void supabase.auth.getSession()
+      .then(({ data: { session }, error }) => {
+        if (error) {
+          console.error("Failed to restore Supabase session:", error);
+          toast.error("Could not restore your sign-in session. Please sign in again.");
+          return;
+        }
+        setSession(session);
+        setUser(session?.user ?? null);
+      })
+      .catch((error: unknown) => {
+        console.error("Failed to restore Supabase session:", error);
+        toast.error("Could not restore your sign-in session. Please sign in again.");
+      })
+      .finally(() => setLoading(false));
     return () => subscription.unsubscribe();
   }, []);
 
